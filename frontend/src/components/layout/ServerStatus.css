@@ -1,0 +1,50 @@
+.server-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  font-size: 14px;
+  color: #fff;
+  margin-right: 8px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-dot.connected {
+  background-color: #4CAF50;
+  box-shadow: 0 0 8px rgba(76, 175, 80, 0.4);
+}
+
+.status-dot.disconnected {
+  background-color: #f44336;
+  box-shadow: 0 0 8px rgba(244, 67, 54, 0.4);
+}
+
+.status-text {
+  font-weight: 500;
+}
+
+/* Light theme styles */
+.top-strip-light .server-status {
+  background: #f5f6fa;
+  color: #222;
+  border: 1px solid #e0e2e6;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.top-strip-light .status-dot.connected {
+  background-color: #4CAF50;
+  box-shadow: 0 0 8px rgba(76, 175, 80, 0.2);
+}
+
+.top-strip-light .status-dot.disconnected {
+  background-color: #f44336;
+  box-shadow: 0 0 8px rgba(244, 67, 54, 0.2);
+} 
