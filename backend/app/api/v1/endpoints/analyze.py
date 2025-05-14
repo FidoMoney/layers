@@ -1,19 +1,18 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict, Any
-from app.services.prompts.funnel_analysis import FunnelPrompt
+from app.services.prompts.flow_analysis import FlowAnalysisPrompt
 
 router = APIRouter()
 
 class AnalyzeRequest(BaseModel):
-    flows: List[Dict[str, Any]]
-    prompt: str
+    flow_data: Dict[str, Any]
 
 @router.post("/flows")
 async def analyze_flows(request: AnalyzeRequest):
     try:
-        funnel_prompt = FunnelPrompt()
-        analysis = funnel_prompt.analyze_flows(request.flows, request.prompt)
+        flow_analysis = FlowAnalysisPrompt()
+        analysis = flow_analysis.generate_prompt(request.flow_data)
         return {"analysis": analysis}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) 
