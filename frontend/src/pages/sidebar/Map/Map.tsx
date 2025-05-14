@@ -284,19 +284,21 @@ const FlowMap: React.FC = () => {
       />
 
       {flowStats && (
-        <Filters
-          flowStats={flowStats}
-          visibleEvents={visibleEvents}
-          showMobileEvents={showMobileEvents}
-          showBackendEvents={showBackendEvents}
-          showOtherEvents={showOtherEvents}
-          selectedMobileFlow={selectedMobileFlow}
-          mobileFlows={mobileFlows}
-          allEvents={allEvents}
-          onEventVisibilityChange={handleEventVisibilityChange}
-          onTypeFilterChange={handleTypeFilterChange}
-          onMobileFlowChange={setSelectedMobileFlow}
-        />
+        <div className="filters-horizontal">
+          <Filters
+            flowStats={flowStats}
+            visibleEvents={visibleEvents}
+            showMobileEvents={showMobileEvents}
+            showBackendEvents={showBackendEvents}
+            showOtherEvents={showOtherEvents}
+            selectedMobileFlow={selectedMobileFlow}
+            mobileFlows={mobileFlows}
+            allEvents={allEvents}
+            onEventVisibilityChange={handleEventVisibilityChange}
+            onTypeFilterChange={handleTypeFilterChange}
+            onMobileFlowChange={setSelectedMobileFlow}
+          />
+        </div>
       )}
 
       <svg ref={svgRef} className="flow-graph" />
