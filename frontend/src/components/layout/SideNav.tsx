@@ -1,24 +1,28 @@
-import { NavLink } from 'react-router-dom';
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import './SideNav.css';
 
-const SideNav = () => {
+const SideNav: React.FC = () => {
+  const location = useLocation();
+
   return (
     <nav className="side-nav">
       <div className="nav-header">
         <h2>Layers</h2>
       </div>
+      
       <ul className="nav-links">
         <li>
-          <NavLink to="/" end>
-            <span className="icon">🏠</span>
-            Home
-          </NavLink>
+          <Link to="/" className={location.pathname === '/' ? 'active' : ''}>
+            <span className="icon">📊</span>
+            Dashboard
+          </Link>
         </li>
         <li>
-          <NavLink to="/settings">
-            <span className="icon">⚙️</span>
-            Settings
-          </NavLink>
+          <Link to="/events" className={location.pathname === '/events' ? 'active' : ''}>
+            <span className="icon">📈</span>
+            Events
+          </Link>
         </li>
       </ul>
     </nav>
