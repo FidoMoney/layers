@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Plus, LayoutDashboard, BarChart2, Settings, User, Search, Map } from 'lucide-react';
+import { Plus, LayoutDashboard, BarChart2, Settings, User as UserIcon, Search, Map } from 'lucide-react';
 import PromptModal from '../modals/PromptModal';
 import ResultModal from '../modals/ResultModal';
+import UserDetails from '../user/UserDetails';
 import { analyticsService } from '../../services/analyticsService';
+import { userService } from '../../services/userService';
+import type { User as UserType } from '../../types/user';
 import './SideNav.css';
 import ServerStatus from './ServerStatus';
 
@@ -46,17 +49,36 @@ const CreateDropdownTop: React.FC<{
   );
 };
 
-const SearchBar: React.FC = () => (
-  <div className="search-bar-light">
-    <Search size={18} className="search-icon-light" />
-    <input 
-      type="text" 
-      placeholder="Find a user" 
-      aria-label="Find a user"
-      className="search-input-light"
-    />
-  </div>
-);
+const SearchBar: React.FC = () => {
+    const [searchTerm, setSearchTerm] = useState('');
+    const navigate = useNavigate();
+
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!searchTerm.trim()) return;
+        
+        // Navigate to the search page with the search term
+        navigate(`/search?q=${encodeURIComponent(searchTerm.trim())}`);
+        setSearchTerm('');
+    };
+
+    return (
+        <div className="search-bar-light">
+            <form onSubmit={handleSearch}>
+                <div className="search-input-container">
+                    <Search size={20} className="search-icon-light" />
+                    <input
+                        type="text"
+                        placeholder="Search by ID or phone..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="search-input-light"
+                    />
+                </div>
+            </form>
+        </div>
+    );
+};
 
 const IconBgCircle: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div className="icon-bg-circle">{children}</div>
@@ -142,7 +164,7 @@ const SideNav: React.FC = () => {
             <Settings size={22} />
           </Link>
           <Link to="/profile" className={`profile-button-light ${location.pathname === '/profile' ? 'active' : ''}`}>
-            <User size={22} />
+            <UserIcon size={22} />
           </Link>
         </div>
       </div>

@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from app.models.event import Event
+from app.models.user import User
 
 class EventDataAccess(ABC):
     """Abstract base class for event data access implementations."""
@@ -73,4 +74,22 @@ class EventDataAccess(ABC):
                 ]
             }
         """
+        pass 
+
+class UserDataAccess(ABC):
+    """Abstract base class for user data access implementations."""
+    
+    @abstractmethod
+    async def get_user_by_id(self, user_id: str) -> Optional[User]:
+        """Retrieve a user by their user_id."""
+        pass
+    
+    @abstractmethod
+    async def get_user_by_phone(self, phone_number: str) -> Optional[User]:
+        """Retrieve a user by their phone number."""
+        pass
+    
+    @abstractmethod
+    async def create_user(self, user: User) -> User:
+        """Create a new user."""
         pass 

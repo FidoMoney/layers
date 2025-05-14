@@ -5,6 +5,7 @@ import Settings from './pages/settings/Settings';
 import Events from './pages/sidebar/Events';
 import Map from './pages/sidebar/Map/Map';
 import CreateFunnel from './pages/modals/CreateFunnel';
+import UserSearch from './pages/sidebar/UserSearch';
 import './App.css';
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
             <Route path="/events" element={<Events />} />
             <Route path="/map" element={<Map />} />
             <Route path="/create/funnel" element={<CreateFunnel />} />
+            <Route path="/search" element={<UserSearch />} />
           </Routes>
         </main>
       </div>

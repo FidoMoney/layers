@@ -3,7 +3,9 @@ from datetime import datetime
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
 from .base import EventDataAccess
+from .interfaces import UserDataAccess
 from app.models.event import Event
+from app.models.user import User
 from app.core.config import settings
 
 # Event type constants
@@ -194,3 +196,33 @@ class MongoEventDataAccess(EventDataAccess):
                 })
         
         return flows 
+
+class MongoUserDataAccess(UserDataAccess):
+    """MongoDB implementation of user data access."""
+    
+    def __init__(self):
+        """Initialize MongoDB connection using settings."""
+        self.client = AsyncIOMotorClient(settings.MONGODB_URL)
+        self.db = self.client[settings.MONGODB_DATABASE]
+        self.users_collection = self.db.users
+    
+    async def close(self):
+        """Close the MongoDB connection."""
+        self.client.close()
+    
+    async def get_user_by_id(self, user_id: str) -> Optional[User]:
+        """Retrieve a user by their user_id."""
+        user = await self.users_collection.find_one({"user_id": user_id})
+        return User.from_mongo(user) if user else None
+    
+    async def get_user_by_phone(self, phone_number: str) -> Optional[User]:
+        """Retrieve a user by their phone number."""
+        user = await self.users_collection.find_one({"phone_number": phone_number})
+        return User.from_mongo(user) if user else None
+    
+    async def create_user(self, user: User) -> User:
+        """Create a new user."""
+        user_dict = user.to_mongo()
+        result = await self.users_collection.insert_one(user_dict)
+        user_dict["_id"] = result.inserted_id
+        return User.from_mongo(user_dict) 

@@ -475,7 +475,9 @@
 
 .search-icon-light {
   position: absolute;
-  left: 20px;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
   color: #bdbdbd;
   pointer-events: none;
 }
@@ -632,4 +634,35 @@
 
 .dropdown-menu-top button:hover {
   background: #f5f6fa;
+}
+
+.search-error {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  color: #dc3545;
+  padding: 0.5rem;
+  font-size: 0.875rem;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-top: 0.5rem;
+  z-index: 1000;
+  text-align: center;
+}
+
+.search-bar-light {
+  position: relative;
+}
+
+.search-bar-light form {
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.search-input-light:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
 } 
