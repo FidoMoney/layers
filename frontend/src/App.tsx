@@ -3,7 +3,7 @@ import SideNav from './components/layout/SideNav';
 import Home from './pages/sidebar/Home';
 import Settings from './pages/settings/Settings';
 import Events from './pages/sidebar/Events';
-import Map from './pages/sidebar/Map/index';
+import Map from './pages/sidebar/Map/Map';
 import CreateFunnel from './pages/modals/CreateFunnel';
 import './App.css';
 
