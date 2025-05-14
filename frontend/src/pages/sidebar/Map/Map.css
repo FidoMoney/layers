@@ -137,4 +137,18 @@
   color: #aaa;
   border-color: #ccc;
   cursor: not-allowed;
+}
+
+.filters-horizontal {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: flex-end;
+  margin-bottom: 20px;
+}
+
+.filters-horizontal > * {
+  margin-bottom: 0 !important;
+  flex: 0 1 auto;
 } 
