@@ -3,6 +3,7 @@ import SideNav from './components/layout/SideNav';
 import Home from './pages/sidebar/Home';
 import Settings from './pages/sidebar/Settings';
 import Events from './pages/sidebar/Events';
+import Map from './pages/sidebar/Map/index';
 import CreateFunnel from './pages/modals/CreateFunnel';
 import './App.css';
 
@@ -16,6 +17,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/events" element={<Events />} />
+            <Route path="/map" element={<Map />} />
             <Route path="/create/funnel" element={<CreateFunnel />} />
           </Routes>
         </main>

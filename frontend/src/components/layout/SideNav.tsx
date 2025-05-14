@@ -87,6 +87,12 @@ const SideNav: React.FC = () => {
             Events
           </Link>
         </li>
+        <li>
+          <Link to="/map" className={location.pathname === '/map' ? 'active' : ''}>
+            <span className="icon">🗺️</span>
+            Map
+          </Link>
+        </li>
         <li className="create-dropdown">
           <button 
             onClick={handleCreateClick}
