@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Plus, LayoutDashboard, BarChart2, Settings, User, Search } from 'lucide-react';
+import { Plus, LayoutDashboard, BarChart2, Settings, User, Search, Map } from 'lucide-react';
 import PromptModal from '../modals/PromptModal';
 import ResultModal from '../modals/ResultModal';
 import { analyticsService } from '../../services/analyticsService';
@@ -162,7 +162,7 @@ const SideNav: React.FC = () => {
         </li>
         <li>
           <Link to="/map" className={location.pathname === '/map' ? 'active' : ''} data-tooltip="Map">
-            <span className="icon">🗺️</span>
+            <Map size={20} />
             {/* Map */}
           </Link>
         </li>
