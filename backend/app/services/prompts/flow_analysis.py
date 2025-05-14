@@ -21,10 +21,7 @@ class FlowAnalysisPrompt:
         # Extract flow-specific events for each user
         flow_events = []
         for user in users:
-            user_events = [
-                event for event in user['events']
-                if flow_name in event['event_name']
-            ]
+            user_events = user.get('events', [])
             if user_events:
                 flow_events.append({
                     'user_id': user['user_id'],
@@ -40,60 +37,55 @@ Here's the event data for {len(flow_events)} users:
 
 {flow_events}
 
-Please analyze this data and provide a detailed analysis following these steps:
+Please analyze this data and provide a detailed funnel analysis following these steps:
 
-1. Flow Extraction:
-   - Extract all events that include "{flow_name}" in their event_name
-   - Order events chronologically
-   - Identify the complete flow sequence
+1. Flow Funnel Analysis:
+   - Identify all events in chronological order from first to last
+   - For each step in the funnel:
+     * Calculate the number of users who reached this step
+     * Calculate the conversion rate from the previous step
+     * Calculate the drop-off rate from the previous step
+     * Calculate the average time users spent on this step before moving to the next
 
-2. Path Analysis:
-   - Identify all unique paths users take through the flow
-   - Calculate the percentage of users following each path
-   - Determine the most common path
-
-3. Drop-off Analysis:
-   - For each step in the flow, calculate:
-     * Number of users who reached that step
-     * Number of users who continued to the next step
-     * Drop-off percentage at each step
-
-4. Conversion Analysis:
-   - Calculate overall conversion rate (users who completed the flow)
-   - Break down conversion rates by:
-     * Country
-     * App version
-
-5. Timing Analysis:
-   - Calculate average time between consecutive steps
-   - Calculate total flow duration for each user
-   - Identify steps with unusually high completion times (>2 minutes)
+2. Timing Analysis:
+   - For each step:
+     * Calculate the average time users spent on this step
+     * Identify any steps with unusually long durations (>2 minutes)
+   - Calculate the total average time from first to last event
+   - Identify any bottlenecks or steps with significant delays
 
 Please format your response exactly as follows:
 
-📍 {flow_name} Flow:
-[Numbered list of all unique events in chronological order]
+📍 {flow_name} Flow Funnel:
 
-✅ Most common path:
-[Path with exact percentage of users]
+Step 1: [First Event Name]
+Users: [X] (100%)
+Avg Time: [X] minutes
+↓ [Conversion Rate]%
 
-❌ Drop-off points:
-[Each point with exact percentage of users who dropped]
+Step 2: [Second Event Name]
+Users: [X] ([Y]% of previous step)
+Avg Time: [X] minutes
+↓ [Conversion Rate]%
 
-🎯 Conversion rate:
-[Overall percentage and breakdowns by country/version]
+[Continue for all steps...]
 
-⏱️ Average time between steps:
-[Each step transition with exact time in minutes]
+Final Step: [Last Event Name]
+Users: [X] ([Y]% of previous step)
+Avg Time: [X] minutes
 
-⏱️ Total flow time (avg): [X] min
-⚠️ High average time: [List steps taking >2 minutes]
+📊 Overall Metrics:
+- Total Steps: [X]
+- Total Users Started: [X]
+- Total Users Completed: [X]
+- Overall Conversion Rate: [X]%
+- Total Average Flow Time: [X] minutes
 
-🌍 Country breakdown:
-[Each country with exact conversion percentage]
+⚠️ Steps with High Average Time (>2 minutes):
+[List steps with their average times]
 
-🛠 Version breakdown:
-[Each version with exact conversion percentage]"""
+💡 Key Insights:
+[3-5 key insights about user behavior and potential improvements]"""
 
         return prompt
 
