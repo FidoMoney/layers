@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { checkServerStatus } from '../services/api';
-import type { ServerStatus } from '../services/api';
+import { checkServerStatus } from '../../services/api';
+import type { ServerStatus } from '../../services/api';
 import './Home.css';
 
 const Home = () => {

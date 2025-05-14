@@ -1,0 +1,23 @@
+.result-modal {
+  max-width: 800px;
+}
+
+.result-content {
+  flex: 1;
+  overflow-y: auto;
+  margin: 20px 0;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+}
+
+.result-text {
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #212529;
+} 
