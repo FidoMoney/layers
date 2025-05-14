@@ -146,39 +146,44 @@ const SideNav: React.FC = () => {
           </Link>
         </div>
       </div>
-      <div className="nav-content">
-        <ul className="nav-links">
-          <li>
-            <Link to="/" className={location.pathname === '/' ? 'active' : ''} data-tooltip="Dashboard">
-              <LayoutDashboard size={20} />
-              {/* Dashboard */}
-            </Link>
-          </li>
-          <li>
-            <Link to="/events" className={location.pathname === '/events' ? 'active' : ''} data-tooltip="Events">
-              <BarChart2 size={20} />
-              {/* Events */}
-            </Link>
-          </li>
-        </ul>
+      
+      <ul className="nav-links">
+        <li>
+          <Link to="/" className={location.pathname === '/' ? 'active' : ''} data-tooltip="Dashboard">
+            <LayoutDashboard size={20} />
+            {/* Dashboard */}
+          </Link>
+        </li>
+        <li>
+          <Link to="/events" className={location.pathname === '/events' ? 'active' : ''} data-tooltip="Events">
+            <BarChart2 size={20} />
+            {/* Events */}
+          </Link>
+        </li>
+        <li>
+          <Link to="/map" className={location.pathname === '/map' ? 'active' : ''} data-tooltip="Map">
+            <span className="icon">🗺️</span>
+            {/* Map */}
+          </Link>
+        </li>
+      </ul>
 
-        <PromptModal
-          isOpen={isPromptModalOpen}
-          onClose={() => setIsPromptModalOpen(false)}
-          onSubmit={handlePromptSubmit}
-          title={`Create ${promptType === 'funnel' ? 'Funnel' : 'Segment'} with Prompt`}
-          isLoading={isLoading}
-          error={error}
-        />
+      <PromptModal
+        isOpen={isPromptModalOpen}
+        onClose={() => setIsPromptModalOpen(false)}
+        onSubmit={handlePromptSubmit}
+        title={`Create ${promptType === 'funnel' ? 'Funnel' : 'Segment'} with Prompt`}
+        isLoading={isLoading}
+        error={error}
+      />
 
-        <ResultModal
-          isOpen={isResultModalOpen}
-          onClose={() => setIsResultModalOpen(false)}
-          onConfirm={handleResultConfirm}
-          result={aiResult}
-          title={`AI Generated ${promptType === 'funnel' ? 'Funnel' : 'Segment'}`}
-        />
-      </div>
+      <ResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => setIsResultModalOpen(false)}
+        onConfirm={handleResultConfirm}
+        result={aiResult}
+        title={`AI Generated ${promptType === 'funnel' ? 'Funnel' : 'Segment'}`}
+      />
     </nav>
   );
 };

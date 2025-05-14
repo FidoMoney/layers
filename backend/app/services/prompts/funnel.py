@@ -317,30 +317,3 @@ Please provide:
 Format the output in a clear, structured way that can be easily visualized."""
         
         return prompt
-
-class FunnelAnalysisHandler(BasePromptHandler):
-    def _get_system_message(self) -> str:
-        return """You are an expert in funnel analysis and optimization.
-Your task is to analyze funnel data and provide insights about:
-- Conversion rates
-- Drop-off points
-- User behavior patterns
-- Optimization opportunities
-- A/B testing suggestions
-
-Provide clear, data-driven insights and actionable recommendations."""
-
-    async def analyze_funnel(
-        self,
-        funnel_data: Dict[str, Any],
-        context: Optional[Dict[str, Any]] = None
-    ) -> str:
-        """
-        Analyze funnel data and provide insights.
-        
-        Args:
-            funnel_data: Dictionary containing funnel metrics and data
-            context: Optional context about the business or previous analyses
-        """
-        prompt = f"Analyze this funnel data and provide insights:\n\n{funnel_data}"
-        return await self.generate(prompt, context) 

@@ -1,5 +1,30 @@
 from typing import Dict, Any, Optional
 from app.services.openai_service import OpenAIService
+from abc import ABC, abstractmethod
+
+class BasePrompt(ABC):
+    """Base class for all prompt handlers."""
+    
+    def __init__(self):
+        """Initialize the base prompt handler."""
+        pass
+    
+    @abstractmethod
+    async def generate_prompt(self, **kwargs) -> str:
+        """Generate a prompt based on the provided parameters."""
+        pass
+    
+    @abstractmethod
+    async def process_response(self, response: str, **kwargs) -> Any:
+        """Process the response from the language model."""
+        pass
+    
+    async def execute(self, **kwargs) -> Any:
+        """Execute the prompt and process the response."""
+        prompt = await self.generate_prompt(**kwargs)
+        # Here you would typically call your language model
+        # For now, we'll just return the prompt
+        return await self.process_response(prompt, **kwargs)
 
 class BasePromptHandler:
     def __init__(self, openai_service: OpenAIService):

@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from typing import Dict, Any, Optional
 from app.services.openai_service import OpenAIService
-from app.services.prompts.funnel import FunnelCreationHandler, FunnelAnalysisHandler
+from app.services.prompts.funnel import FunnelCreationHandler
+from app.services.prompts.funnel_analysis import FunnelPrompt
 from app.services.prompts.segment import SegmentCreationHandler
 from app.dependencies import get_openai_service
 
@@ -39,10 +40,10 @@ async def analyze_funnel(
     openai_service: OpenAIService = Depends(get_openai_service)
 ):
     """Analyze funnel data and provide insights."""
-    handler = FunnelAnalysisHandler(openai_service)
-    result = await handler.analyze_funnel(
-        funnel_data=request.funnel_data,
-        context=request.context
+    funnel_prompt = FunnelPrompt()
+    result = funnel_prompt.analyze_flows(
+        flows=request.funnel_data.get('flows', []),
+        prompt=request.funnel_data.get('prompt', '')
     )
     return {"result": result}
 
