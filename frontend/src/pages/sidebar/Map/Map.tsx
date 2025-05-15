@@ -12,6 +12,21 @@ import PromptModal from '../../../components/modals/PromptModal';
 import { ChartPicker } from './ChartPicker';
 import './Map.css';
 
+enum AnalysisType {
+  ALL_VISIBLE = 'ALL_VISIBLE',
+  FUNNEL = 'FUNNEL'
+}
+
+interface FunnelData {
+  sequence: { id: string; label: string; count: number }[];
+  totalUsers: number;
+}
+
+interface AnalysisData {
+  type: AnalysisType;
+  funnelData?: FunnelData;
+}
+
 const FlowMap: React.FC = () => {
   const [selectedVersion, setSelectedVersion] = useState<string>('');
   const [versions, setVersions] = useState<string[]>([]);
@@ -19,7 +34,7 @@ const FlowMap: React.FC = () => {
   const [isLoadingFlows, setIsLoadingFlows] = useState(false);
   const [isRendering, setIsRendering] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [visualizationType, setVisualizationType] = useState<VisualizationType>('flow');
+  const [visualizationType, setVisualizationType] = useState<VisualizationType>('funnel');
   const [isAnalyzeModalOpen, setIsAnalyzeModalOpen] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedTime, setSelectedTime] = useState<string>('30');
@@ -36,6 +51,7 @@ const FlowMap: React.FC = () => {
   const [mobileFlows, setMobileFlows] = useState<string[]>([]);
   // Store all event pairs and their counts
   const [allEventPairs, setAllEventPairs] = useState<Map<string, number>>(new Map());
+  const [analyzeData, setAnalyzeData] = useState<AnalysisData | null>(null);
 
   // Update visible events when filters change
   useEffect(() => {
@@ -333,19 +349,36 @@ const FlowMap: React.FC = () => {
       setIsAnalyzing(true);
       const flows = await getUserFlows(selectedVersion, parseInt(selectedTime));
       
-      // Filter flows to only include visible events
-      const filteredFlows = flows.map(flow => ({
-        user_id: flow.user_id,
-        flow: flow.flow.filter(event => visibleEvents.has(event.event_name))
-      })).filter(flow => flow.flow.length > 0);
+      if (analyzeData?.type === AnalysisType.FUNNEL && analyzeData.funnelData) {
+        // Filter flows to only include users who followed this exact funnel sequence
+        const funnelSequence = analyzeData.funnelData.sequence.map(e => e.id);
+        const filteredFlows = flows.map(flow => ({
+          user_id: flow.user_id,
+          flow: flow.flow.filter(event => funnelSequence.includes(event.event_name))
+        })).filter(flow => {
+          // Check if the user's flow matches the funnel sequence
+          const userEventIds = flow.flow.map(e => e.event_name);
+          return funnelSequence.every((eventId, index) => userEventIds[index] === eventId);
+        });
 
-      const analysis = await analyzeFlows(filteredFlows, prompt);
-      console.log('Analysis:', analysis);
+        const analysis = await analyzeFlows(filteredFlows, `Analyze this funnel sequence: ${analyzeData.funnelData.sequence.map(e => e.label).join(' -> ')}`);
+        console.log('Funnel Analysis:', analysis);
+      } else {
+        // For regular analyze button, filter flows to only include visible events
+        const filteredFlows = flows.map(flow => ({
+          user_id: flow.user_id,
+          flow: flow.flow.filter(event => visibleEvents.has(event.event_name))
+        })).filter(flow => flow.flow.length > 0);
+
+        const analysis = await analyzeFlows(filteredFlows, prompt);
+        console.log('Analysis:', analysis);
+      }
     } catch (err) {
       console.error('Error analyzing flows:', err);
     } finally {
       setIsAnalyzing(false);
       setIsAnalyzeModalOpen(false);
+      setAnalyzeData(null); // Always clear the analysis data after analysis
     }
   };
 
@@ -515,6 +548,13 @@ const FlowMap: React.FC = () => {
               svgRef={svgRef}
               stats={flowStats}
               visibleEvents={visibleEvents}
+              onAnalyze={(funnelData) => {
+                setAnalyzeData({
+                  type: AnalysisType.FUNNEL,
+                  funnelData
+                });
+                setIsAnalyzeModalOpen(true);
+              }}
             />
           )}
         </>
@@ -522,9 +562,12 @@ const FlowMap: React.FC = () => {
 
       <PromptModal
         isOpen={isAnalyzeModalOpen}
-        onClose={() => setIsAnalyzeModalOpen(false)}
+        onClose={() => {
+          setIsAnalyzeModalOpen(false);
+          setAnalyzeData(null); // Clear analysis data when modal is closed
+        }}
         onSubmit={handleAnalyze}
-        title="Analyze Flow"
+        title={analyzeData?.type === AnalysisType.FUNNEL ? "Analyze Funnel" : "Analyze Flow"}
         isLoading={isAnalyzing}
       />
     </div>

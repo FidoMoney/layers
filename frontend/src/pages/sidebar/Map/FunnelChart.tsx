@@ -10,6 +10,7 @@ interface FunnelChartProps {
   svgRef: React.RefObject<SVGSVGElement>;
   stats: FlowStats;
   visibleEvents: Set<string>;
+  onAnalyze?: (funnelData: { sequence: { id: string; label: string; count: number }[]; totalUsers: number }) => void;
 }
 
 interface WeightedSequence {
@@ -114,7 +115,7 @@ const processUserFlows = (stats: FlowStats, visibleEvents: Set<string>): Weighte
   });
 };
 
-export const FunnelChart: React.FC<FunnelChartProps> = ({ svgRef, stats, visibleEvents }) => {
+export const FunnelChart: React.FC<FunnelChartProps> = ({ svgRef, stats, visibleEvents, onAnalyze }) => {
   const renderFunnelChart = useCallback(() => {
     if (!svgRef.current) return;
 
@@ -155,7 +156,7 @@ export const FunnelChart: React.FC<FunnelChartProps> = ({ svgRef, stats, visible
           .attr('class', 'flow-container')
           .attr('transform', `translate(0, ${yOffset})`);
 
-        // Add container background
+        // Add container background with click handler
         container.append('rect')
           .attr('x', -containerPadding)
           .attr('y', -containerPadding)
@@ -164,7 +165,20 @@ export const FunnelChart: React.FC<FunnelChartProps> = ({ svgRef, stats, visible
           .attr('fill', '#f8f9fa')
           .attr('stroke', '#dee2e6')
           .attr('stroke-width', 1)
-          .attr('rx', 8);
+          .attr('rx', 8)
+          .style('cursor', 'pointer')
+          .on('click', () => {
+            if (onAnalyze) {
+              onAnalyze({
+                sequence: sequence.sequence.map(event => ({
+                  id: event.id,
+                  label: event.label,
+                  count: event.count
+                })),
+                totalUsers: sequence.totalUsers
+              });
+            }
+          });
 
         // Create scale for the bars
         const barAreaOffset = 20; // extra space between y-axis and bars
