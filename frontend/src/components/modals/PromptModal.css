@@ -115,4 +115,35 @@
   border: 1px solid #f5c6cb;
   border-radius: 4px;
   font-size: 0.9rem;
+}
+
+.result-section {
+  margin: 20px 0;
+  border-top: 1px solid #e0e2e6;
+  padding-top: 20px;
+}
+
+.result-section h3 {
+  margin: 0 0 15px 0;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.result-content {
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 15px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.result-text {
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #212529;
 } 

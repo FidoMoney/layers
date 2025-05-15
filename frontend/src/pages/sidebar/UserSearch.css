@@ -3,6 +3,10 @@
     margin: 0 auto;
 }
 
+.user-search-page.has-sidebar {
+    padding-right: 0;
+}
+
 .search-loading,
 .search-empty-state {
     text-align: center;
@@ -28,6 +32,11 @@
 .user-details-container {
     margin-top: 0;
     padding-left: 0;
+    width: 100%;
+}
+
+.user-search-page.has-sidebar .user-details-container {
+    max-width: none;
 }
 
 .user-card {

@@ -4,7 +4,7 @@ import './PromptModal.css';
 interface PromptModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (text: string) => void;
+  onSubmit: (text: string) => Promise<string>;
   title: string;
   isLoading?: boolean;
   error?: string | null;
@@ -19,11 +19,24 @@ const PromptModal: React.FC<PromptModalProps> = ({
   error = null
 }) => {
   const [text, setText] = useState('');
+  const [result, setResult] = useState<string>('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleClose = () => {
+    setText('');  // Reset the prompt text
+    setResult('');  // Reset the result
+    onClose();  // Call the original onClose
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(text);
-    setText('');
+    try {
+      console.log('Submitting prompt:', text);
+      const analysisResult = await onSubmit(text);
+      console.log('Got analysis result in modal:', analysisResult);
+      setResult(analysisResult);
+    } catch (err) {
+      console.error('Error submitting prompt:', err);
+    }
   };
 
   if (!isOpen) return null;
@@ -33,7 +46,7 @@ const PromptModal: React.FC<PromptModalProps> = ({
       <div className="modal-content">
         <div className="modal-header">
           <h2>{title}</h2>
-          <button className="close-button" onClick={onClose}>×</button>
+          <button className="close-button" onClick={handleClose}>×</button>
         </div>
         <form onSubmit={handleSubmit}>
           <textarea
@@ -44,11 +57,19 @@ const PromptModal: React.FC<PromptModalProps> = ({
             disabled={isLoading}
           />
           {error && <div className="error-message">{error}</div>}
+          {result && (
+            <div className="result-section">
+              <h3>Insights</h3>
+              <div className="result-content">
+                <pre className="result-text">{result}</pre>
+              </div>
+            </div>
+          )}
           <div className="modal-footer">
             <button 
               type="button" 
               className="cancel-button" 
-              onClick={onClose}
+              onClick={handleClose}
               disabled={isLoading}
             >
               Cancel

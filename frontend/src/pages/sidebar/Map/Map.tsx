@@ -8,6 +8,7 @@ import { SankeyDiagram } from './SankeyDiagram';
 import { FunnelChart } from './FunnelChart';
 import { Filters } from './Filters';
 import { VersionPicker } from './VersionPicker';
+import AnalysisSidebar from '../../../components/sidebar/AnalysisSidebar';
 import PromptModal from '../../../components/modals/PromptModal';
 import { ChartPicker } from './ChartPicker';
 import './Map.css';
@@ -35,7 +36,6 @@ const FlowMap: React.FC = () => {
   const [isRendering, setIsRendering] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [visualizationType, setVisualizationType] = useState<VisualizationType>('funnel');
-  const [isAnalyzeModalOpen, setIsAnalyzeModalOpen] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedTime, setSelectedTime] = useState<string>('30');
   const svgRef = useRef<SVGSVGElement>(null!);
@@ -49,7 +49,7 @@ const FlowMap: React.FC = () => {
   const [flowStats, setFlowStats] = useState<FlowStats | null>(null);
   const [selectedMobileFlows, setSelectedMobileFlows] = useState<Set<string>>(new Set(['all']));
   const [mobileFlows, setMobileFlows] = useState<string[]>([]);
-  // Store all event pairs and their counts
+  const [isAnalyzeSidebarOpen, setIsAnalyzeSidebarOpen] = useState(false);
   const [allEventPairs, setAllEventPairs] = useState<Map<string, number>>(new Map());
   const [analyzeData, setAnalyzeData] = useState<AnalysisData | null>(null);
 
@@ -342,13 +342,13 @@ const FlowMap: React.FC = () => {
     }
   };
 
-  const handleAnalyze = async (prompt: string) => {
-    if (!selectedVersion) return;
-
+  const handleAnalyze = async (prompt: string): Promise<string> => {
+    if (!selectedVersion) {
+      throw new Error('Please select a version first');
+    }
     try {
       setIsAnalyzing(true);
       const flows = await getUserFlows(selectedVersion, parseInt(selectedTime));
-      
       if (analyzeData?.type === AnalysisType.FUNNEL && analyzeData.funnelData) {
         // Filter flows to only include users who followed this exact funnel sequence
         const funnelSequence = analyzeData.funnelData.sequence.map(e => e.id);
@@ -361,8 +361,10 @@ const FlowMap: React.FC = () => {
           return funnelSequence.every((eventId, index) => userEventIds[index] === eventId);
         });
 
-        const analysis = await analyzeFlows(filteredFlows, `Analyze this funnel sequence: ${analyzeData.funnelData.sequence.map(e => e.label).join(' -> ')}`);
-        console.log('Funnel Analysis:', analysis);
+        console.log('Sending flows for analysis:', filteredFlows);
+        const analysis = await analyzeFlows(filteredFlows, prompt);
+        console.log('Received analysis result:', analysis);
+        return analysis || 'No insights available';
       } else {
         // For regular analyze button, filter flows to only include visible events
         const filteredFlows = flows.map(flow => ({
@@ -372,43 +374,44 @@ const FlowMap: React.FC = () => {
 
         const analysis = await analyzeFlows(filteredFlows, prompt);
         console.log('Analysis:', analysis);
+        return analysis || 'No insights available';
       }
     } catch (err) {
       console.error('Error analyzing flows:', err);
+      throw new Error('Failed to analyze flows. Please try again.');
     } finally {
       setIsAnalyzing(false);
-      setIsAnalyzeModalOpen(false);
-      setAnalyzeData(null); // Always clear the analysis data after analysis
     }
+    return '';
+  };
+
+  const generatePromptFromSelectedFlow = (): string => {
+    if (selectedMobileFlows.has('all')) {
+      return "Get insights about all mobile flows";
+    }
+    return `Get insights about the ${Array.from(selectedMobileFlows).join(', ')} flow(s)`;
+  };
+
+  const handleGetInsights = () => {
+    setIsAnalyzeSidebarOpen(true);
   };
 
   const handleMobileFlowChange = (flow: string) => {
     setSelectedMobileFlows(prev => {
       const newSet = new Set(prev);
-      
       if (flow === 'none') {
-        // Deselect all flows
         newSet.clear();
       } else if (flow === 'all') {
-        // Select all flows
         newSet.clear();
         newSet.add('all');
       } else {
-        // Handle individual flow selection
-        newSet.delete('all'); // Remove 'all' when selecting individual flows
+        newSet.delete('all');
         if (newSet.has(flow)) {
           newSet.delete(flow);
         } else {
           newSet.add(flow);
         }
-        
-        // If all flows are selected individually, switch to 'all' state
-        if (newSet.size === mobileFlows.length) {
-          newSet.clear();
-          newSet.add('all');
-        }
       }
-      
       return newSet;
     });
   };
@@ -510,7 +513,7 @@ const FlowMap: React.FC = () => {
           {flowStats && (
             <>
               <button 
-                onClick={() => setIsAnalyzeModalOpen(true)}
+                onClick={() => setIsAnalyzeSidebarOpen(true)}
                 className="analyze-button"
               >
                 Analyze
@@ -568,23 +571,26 @@ const FlowMap: React.FC = () => {
                   type: AnalysisType.FUNNEL,
                   funnelData
                 });
-                setIsAnalyzeModalOpen(true);
+                setIsAnalyzeSidebarOpen(true);
               }}
             />
           )}
         </>
       )}
 
-      <PromptModal
-        isOpen={isAnalyzeModalOpen}
-        onClose={() => {
-          setIsAnalyzeModalOpen(false);
-          setAnalyzeData(null); // Clear analysis data when modal is closed
-        }}
-        onSubmit={handleAnalyze}
-        title={analyzeData?.type === AnalysisType.FUNNEL ? "Analyze Funnel" : "Analyze Flow"}
-        isLoading={isAnalyzing}
-      />
+      {isAnalyzeSidebarOpen && (
+        <AnalysisSidebar
+          isOpen={isAnalyzeSidebarOpen}
+          onClose={() => {
+            setIsAnalyzeSidebarOpen(false);
+            setError(null);
+          }}
+          onSubmit={handleAnalyze}
+          isLoading={isAnalyzing}
+          error={error}
+          initialPrompt={generatePromptFromSelectedFlow()}
+        />
+      )}
     </div>
   );
 };
