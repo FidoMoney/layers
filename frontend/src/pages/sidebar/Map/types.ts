@@ -5,22 +5,34 @@ export interface NodeData extends d3.SimulationNodeDatum {
   label: string;
   count: number;
   level: number;
+  type: 'ME' | 'BE' | 'OTHER';
   x?: number;
   y?: number;
-  fx?: number | null;
-  fy?: number | null;
-  type?: 'ME' | 'BE' | 'OTHER';
+  fx?: number;
+  fy?: number;
+  flowGroup?: string;
 }
 
-export interface EdgeData extends d3.SimulationLinkDatum<NodeData> {
+export interface EdgeData {
   source: string | NodeData;
   target: string | NodeData;
   count: number;
 }
 
+export interface FlowEvent {
+  event_name: string;
+  timestamp: string;
+}
+
+export interface UserFlow {
+  user_id: string;
+  flow: FlowEvent[];
+}
+
 export interface FlowStats {
   nodes: NodeData[];
   edges: EdgeData[];
+  userFlows: { events: string[] }[];
 }
 
 export interface SankeyNode extends d3.SimulationNodeDatum {
@@ -35,11 +47,29 @@ export interface SankeyNode extends d3.SimulationNodeDatum {
   level: number;
 }
 
-export interface SankeyLink extends d3.SimulationLinkDatum<SankeyNode> {
-  source: SankeyNode;
-  target: SankeyNode;
+export interface BaseLink {
+  source: string | NodeData;
+  target: string | NodeData;
+  count: number;
+}
+
+export interface FlowLink extends BaseLink {
+  width?: number;
+  opacity?: number;
+}
+
+export interface SankeyLink extends BaseLink {
   value: number;
   width?: number;
 }
 
-export type VisualizationType = 'flow' | 'sankey'; 
+export interface DiagramLink {
+  source: string | NodeData;
+  target: string | NodeData;
+  count: number;
+  value: number;
+  width?: number;
+  opacity?: number;
+}
+
+export type VisualizationType = 'flow' | 'sankey' | 'funnel'; 

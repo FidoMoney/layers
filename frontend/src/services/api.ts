@@ -38,13 +38,66 @@ export interface UserFlow {
   }>;
 }
 
-export const getUserFlows = async (version: string): Promise<UserFlow[]> => {
+export const getUserFlows = async (version: string, conversionTimeMinutes: number): Promise<UserFlow[]> => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/v1/events/flows/${encodeURIComponent(version)}`);
     if (!response.ok) {
       throw new Error('Failed to fetch user flows');
     }
-    return await response.json();
+    const flows = await response.json();
+    
+    // Sort events within each flow by timestamp
+    const sortedFlows = flows.map((flow: UserFlow) => ({
+      ...flow,
+      flow: flow.flow.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+    }));
+
+    // Process flows to end either at App Launched or after conversion time
+    return sortedFlows.map((flow: UserFlow) => {
+      const events = flow.flow;
+      const processedEvents = [];
+      let lastEventTime = new Date(events[0].timestamp).getTime();
+      
+      for (let i = 0; i < events.length; i++) {
+        const currentEvent = events[i];
+        const currentEventTime = new Date(currentEvent.timestamp).getTime();
+        
+        // Transform event name if it matches the pattern "ME - XX"
+        if (currentEvent.event_name.startsWith('ME - ') && currentEvent.event_name.split(' - ').length === 2) {
+          const eventDescription = currentEvent.event_attributes?.event_description || '';
+          const eventIntent = currentEvent.event_attributes?.event_intent || '';
+          currentEvent.event_name = `${currentEvent.event_name} - ${eventDescription} - ${eventIntent}`;
+        }
+        
+        // Add the current event
+        processedEvents.push(currentEvent);
+        
+        // Check if this is the last event
+        if (i === events.length - 1) {
+          break;
+        }
+        
+        // Check if next event is App Launched
+        const nextEvent = events[i + 1];
+        if (nextEvent.event_name === 'App Launched') {
+          break;
+        }
+        
+        // Check if time gap exceeds conversion time
+        const timeGap = currentEventTime - lastEventTime;
+        const conversionTimeMs = conversionTimeMinutes * 60 * 1000;
+        if (timeGap > conversionTimeMs) {
+          break;
+        }
+        
+        lastEventTime = currentEventTime;
+      }
+      
+      return {
+        ...flow,
+        flow: processedEvents
+      };
+    });
   } catch (error) {
     console.error('Error fetching user flows:', error);
     throw error;
