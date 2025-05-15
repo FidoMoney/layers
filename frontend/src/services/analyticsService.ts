@@ -1,4 +1,5 @@
 import axios from 'axios';
+import type { UserFlow } from './api';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
@@ -37,5 +38,15 @@ export const analyticsService = {
       context
     });
     return response.data;
+  },
+
+  async analyzeFlows(flows: UserFlow[], prompt: string): Promise<string> {
+    const response = await axios.post(`${API_BASE_URL}/analytics/flows/analyze`, {
+      flow_data: {
+        flows,
+        prompt
+      }
+    });
+    return response.data.result;
   }
 }; 

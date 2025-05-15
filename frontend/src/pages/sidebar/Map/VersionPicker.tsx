@@ -13,6 +13,7 @@ interface VersionPickerProps {
   onCreateMap: () => void;
   onAnalyze: () => void;
   hasFlowStats: boolean;
+  analyzeButtonText?: string;
 }
 
 export const VersionPicker: React.FC<VersionPickerProps> = ({
@@ -26,7 +27,8 @@ export const VersionPicker: React.FC<VersionPickerProps> = ({
   onVisualizationTypeChange,
   onCreateMap,
   onAnalyze,
-  hasFlowStats
+  hasFlowStats,
+  analyzeButtonText = 'Analyze'
 }) => {
   return (
     <div className="version-picker">
@@ -64,7 +66,7 @@ export const VersionPicker: React.FC<VersionPickerProps> = ({
             onClick={onAnalyze}
             className="analyze-button"
           >
-            Analyze
+            {analyzeButtonText}
           </button>
         )}
       </div>

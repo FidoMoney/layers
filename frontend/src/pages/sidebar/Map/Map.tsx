@@ -7,7 +7,7 @@ import { FlowChart } from './FlowChart';
 import { SankeyDiagram } from './SankeyDiagram';
 import { Filters } from './Filters';
 import { VersionPicker } from './VersionPicker';
-import PromptModal from '../../../components/modals/PromptModal';
+import AnalysisSidebar from '../../../components/sidebar/AnalysisSidebar';
 import './Map.css';
 
 const FlowMap: React.FC = () => {
@@ -17,7 +17,6 @@ const FlowMap: React.FC = () => {
   const [isLoadingFlows, setIsLoadingFlows] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [visualizationType, setVisualizationType] = useState<VisualizationType>('flow');
-  const [isAnalyzeModalOpen, setIsAnalyzeModalOpen] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const svgRef = useRef<SVGSVGElement>(null!);
   
@@ -30,6 +29,7 @@ const FlowMap: React.FC = () => {
   const [flowStats, setFlowStats] = useState<FlowStats | null>(null);
   const [selectedMobileFlow, setSelectedMobileFlow] = useState<string>('all');
   const [mobileFlows, setMobileFlows] = useState<string[]>([]);
+  const [isAnalyzeSidebarOpen, setIsAnalyzeSidebarOpen] = useState(false);
 
   // Update visible events when type filters change
   useEffect(() => {
@@ -244,8 +244,10 @@ const FlowMap: React.FC = () => {
     }
   };
 
-  const handleAnalyze = async (prompt: string) => {
-    if (!selectedVersion) return;
+  const handleAnalyze = async (prompt: string): Promise<string> => {
+    if (!selectedVersion) {
+      throw new Error('Please select a version first');
+    }
 
     try {
       setIsAnalyzing(true);
@@ -257,18 +259,31 @@ const FlowMap: React.FC = () => {
         flow: flow.flow.filter(event => visibleEvents.has(event.event_name))
       })).filter(flow => flow.flow.length > 0);
 
+      console.log('Sending flows for analysis:', filteredFlows);
       const analysis = await analyzeFlows(filteredFlows, prompt);
-      console.log('Analysis:', analysis);
+      console.log('Received analysis result:', analysis);
+      return analysis || 'No insights available';
     } catch (err) {
       console.error('Error analyzing flows:', err);
+      throw new Error('Failed to analyze flows. Please try again.');
     } finally {
       setIsAnalyzing(false);
-      setIsAnalyzeModalOpen(false);
     }
   };
 
+  const generatePromptFromSelectedFlow = (): string => {
+    if (selectedMobileFlow === 'all') {
+      return "Get insights about all mobile flows";
+    }
+    return `Get insights about the ${selectedMobileFlow} flow`;
+  };
+
+  const handleGetInsights = () => {
+    setIsAnalyzeSidebarOpen(true);
+  };
+
   return (
-    <div className="map-container">
+    <div className={`map-container ${isAnalyzeSidebarOpen ? 'has-sidebar' : ''}`}>
       <VersionPicker
         selectedVersion={selectedVersion}
         versions={versions}
@@ -279,8 +294,9 @@ const FlowMap: React.FC = () => {
         onVersionChange={setSelectedVersion}
         onVisualizationTypeChange={setVisualizationType}
         onCreateMap={handleCreateMap}
-        onAnalyze={() => setIsAnalyzeModalOpen(true)}
+        onAnalyze={handleGetInsights}
         hasFlowStats={!!flowStats}
+        analyzeButtonText="Get insights"
       />
 
       {flowStats && (
@@ -317,13 +333,19 @@ const FlowMap: React.FC = () => {
         />
       )}
 
-      <PromptModal
-        isOpen={isAnalyzeModalOpen}
-        onClose={() => setIsAnalyzeModalOpen(false)}
-        onSubmit={handleAnalyze}
-        title="Analyze Flow"
-        isLoading={isAnalyzing}
-      />
+      {isAnalyzeSidebarOpen && (
+        <AnalysisSidebar
+          isOpen={isAnalyzeSidebarOpen}
+          onClose={() => {
+            setIsAnalyzeSidebarOpen(false);
+            setError(null);
+          }}
+          onSubmit={handleAnalyze}
+          isLoading={isAnalyzing}
+          error={error}
+          initialPrompt={generatePromptFromSelectedFlow()}
+        />
+      )}
     </div>
   );
 };
