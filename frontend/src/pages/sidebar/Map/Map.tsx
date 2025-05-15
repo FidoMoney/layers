@@ -1,23 +1,43 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getAppVersions, getUserFlows, analyzeFlows } from '../../../services/api';
 import type { UserFlow } from '../../../services/api';
-import type { FlowStats, VisualizationType } from './types';
+import type { FlowStats, EdgeData, NodeData, VisualizationType } from './types';
 import { getEventType, getMobileFlowName } from './utils';
 import { FlowChart } from './FlowChart';
 import { SankeyDiagram } from './SankeyDiagram';
+import { FunnelChart } from './FunnelChart';
 import { Filters } from './Filters';
 import { VersionPicker } from './VersionPicker';
 import AnalysisSidebar from '../../../components/sidebar/AnalysisSidebar';
+import PromptModal from '../../../components/modals/PromptModal';
+import { ChartPicker } from './ChartPicker';
 import './Map.css';
+
+enum AnalysisType {
+  ALL_VISIBLE = 'ALL_VISIBLE',
+  FUNNEL = 'FUNNEL'
+}
+
+interface FunnelData {
+  sequence: { id: string; label: string; count: number }[];
+  totalUsers: number;
+}
+
+interface AnalysisData {
+  type: AnalysisType;
+  funnelData?: FunnelData;
+}
 
 const FlowMap: React.FC = () => {
   const [selectedVersion, setSelectedVersion] = useState<string>('');
   const [versions, setVersions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingFlows, setIsLoadingFlows] = useState(false);
+  const [isRendering, setIsRendering] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [visualizationType, setVisualizationType] = useState<VisualizationType>('flow');
+  const [visualizationType, setVisualizationType] = useState<VisualizationType>('funnel');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [selectedTime, setSelectedTime] = useState<string>('30');
   const svgRef = useRef<SVGSVGElement>(null!);
   
   // State for filters
@@ -27,26 +47,61 @@ const FlowMap: React.FC = () => {
   const [showOtherEvents, setShowOtherEvents] = useState(true);
   const [allEvents, setAllEvents] = useState<string[]>([]);
   const [flowStats, setFlowStats] = useState<FlowStats | null>(null);
-  const [selectedMobileFlow, setSelectedMobileFlow] = useState<string>('all');
+  const [selectedMobileFlows, setSelectedMobileFlows] = useState<Set<string>>(new Set(['all']));
   const [mobileFlows, setMobileFlows] = useState<string[]>([]);
   const [isAnalyzeSidebarOpen, setIsAnalyzeSidebarOpen] = useState(false);
+  const [allEventPairs, setAllEventPairs] = useState<Map<string, number>>(new Map());
+  const [analyzeData, setAnalyzeData] = useState<AnalysisData | null>(null);
 
-  // Update visible events when type filters change
+  // Update visible events when filters change
   useEffect(() => {
     if (!flowStats) return;
 
+    setIsRendering(true);
     const newVisibleEvents = new Set<string>();
-    flowStats.nodes.forEach(node => {
-      if (
-        (node.type === 'ME' && showMobileEvents) ||
-        (node.type === 'BE' && showBackendEvents) ||
-        (node.type === 'OTHER' && showOtherEvents)
-      ) {
-        newVisibleEvents.add(node.id);
+    
+    if (selectedMobileFlows.has('all')) {
+      // When 'all' is selected, show events based on type filters
+      flowStats.nodes.forEach(node => {
+        if (
+          (node.type === 'ME' && showMobileEvents) ||
+          (node.type === 'BE' && showBackendEvents) ||
+          (node.type === 'OTHER' && showOtherEvents)
+        ) {
+          newVisibleEvents.add(node.id);
+        }
+      });
+    } else {
+      // When specific mobile flows are selected:
+      // 1. Add only mobile events from the selected flows
+      flowStats.nodes.forEach(node => {
+        if (node.type === 'ME') {
+          const flowName = getMobileFlowName(node.id);
+          if (flowName && selectedMobileFlows.has(flowName)) {
+            newVisibleEvents.add(node.id);
+          }
+        }
+      });
+
+      // 2. Add other events if their filter is enabled
+      if (showOtherEvents) {
+        flowStats.nodes.forEach(node => {
+          if (node.type === 'OTHER') {
+            newVisibleEvents.add(node.id);
+          }
+        });
       }
-    });
+    }
+
+    // When specific mobile flows are selected, automatically disable backend events
+    if (!selectedMobileFlows.has('all') && showBackendEvents) {
+      setShowBackendEvents(false);
+    }
+
     setVisibleEvents(newVisibleEvents);
-  }, [showMobileEvents, showBackendEvents, showOtherEvents, flowStats]);
+    // Add a small delay to ensure the loading state is visible
+    setTimeout(() => setIsRendering(false), 100);
+  }, [selectedMobileFlows, flowStats, showMobileEvents, showBackendEvents, showOtherEvents]);
 
   // Update mobile flows when nodes change
   useEffect(() => {
@@ -61,51 +116,6 @@ const FlowMap: React.FC = () => {
     });
     setMobileFlows(Array.from(flows).sort());
   }, [flowStats]);
-
-  // Update visible events when mobile flow filter changes
-  useEffect(() => {
-    if (!flowStats) return;
-
-    if (selectedMobileFlow !== 'all') {
-      setShowBackendEvents(false);
-    } else {
-      setShowBackendEvents(true);
-    }
-
-    setVisibleEvents(prev => {
-      const newSet = new Set(prev);
-      
-      if (selectedMobileFlow === 'all') {
-        flowStats.nodes.forEach(node => {
-          if (
-            (node.type === 'ME' && showMobileEvents) ||
-            (node.type === 'BE' && showBackendEvents) ||
-            (node.type === 'OTHER' && showOtherEvents)
-          ) {
-            newSet.add(node.id);
-          } else {
-            newSet.delete(node.id);
-          }
-        });
-      } else {
-        flowStats.nodes.forEach(node => {
-          if (node.type === 'ME') {
-            const flowName = getMobileFlowName(node.id);
-            if (flowName === selectedMobileFlow) {
-              newSet.add(node.id);
-            } else {
-              newSet.delete(node.id);
-            }
-          } else if (node.type === 'BE') {
-            newSet.delete(node.id);
-          } else if (node.type === 'OTHER' && showOtherEvents) {
-            newSet.add(node.id);
-          }
-        });
-      }
-      return newSet;
-    });
-  }, [selectedMobileFlow, flowStats, showMobileEvents, showBackendEvents, showOtherEvents]);
 
   useEffect(() => {
     const fetchVersions = async () => {
@@ -138,12 +148,35 @@ const FlowMap: React.FC = () => {
   }, []);
 
   const processFlows = (flows: UserFlow[]): FlowStats => {
+    console.log('Raw flows data:', flows);
+    
     const nodeMap = new Map<string, any>();
-    const edgeMap = new Map<string, any>();
+    const edgeMap = new Map<string, number>();
     const uniqueEvents = new Set<string>();
     
     flows.forEach(flow => {
       const events = flow.flow;
+      
+      // First pass: create a map of event sequences and dependencies
+      const eventSequences = new Map<string, Set<number>>();
+      const dependencies = new Map<string, Set<string>>();
+      
+      events.forEach((event, index) => {
+        const nodeId = event.event_name;
+        if (!eventSequences.has(nodeId)) {
+          eventSequences.set(nodeId, new Set());
+          dependencies.set(nodeId, new Set());
+        }
+        eventSequences.get(nodeId)!.add(index);
+        
+        // Add dependency: current event depends on previous event
+        if (index > 0) {
+          const prevEvent = events[index - 1].event_name;
+          dependencies.get(nodeId)!.add(prevEvent);
+        }
+      });
+
+      // Second pass: assign nodes
       events.forEach((event, index) => {
         const nodeId = event.event_name;
         uniqueEvents.add(nodeId);
@@ -152,31 +185,96 @@ const FlowMap: React.FC = () => {
           existingNode.count++;
         } else {
           const type = getEventType(event.event_name);
+          let flowGroup: string | undefined = undefined;
+          if (type === 'ME') {
+            flowGroup = getMobileFlowName(event.event_name) || undefined;
+          }
           nodeMap.set(nodeId, { 
             id: nodeId, 
             label: event.event_name, 
             count: 1,
-            level: index,
-            type
+            level: 0,
+            type,
+            flowGroup,
+            sequences: eventSequences.get(nodeId) || new Set(),
+            dependencies: dependencies.get(nodeId) || new Set()
           });
         }
 
+        // Create links between consecutive events
         if (index < events.length - 1) {
           const nextEvent = events[index + 1];
-          const edgeId = `${nodeId}-${nextEvent.event_name}`;
-          const existingEdge = edgeMap.get(edgeId);
-          if (existingEdge) {
-            existingEdge.count++;
-          } else {
-            edgeMap.set(edgeId, {
-              source: nodeId,
-              target: nextEvent.event_name,
-              count: 1
-            });
-          }
+          const edgeId = `${nodeId}->${nextEvent.event_name}`;
+          edgeMap.set(edgeId, (edgeMap.get(edgeId) || 0) + 1);
         }
       });
     });
+
+    // Calculate levels using topological sort
+    const nodes = Array.from(nodeMap.values());
+    const levelMap = new Map<string, number>();
+    const visited = new Set<string>();
+    const temp = new Set<string>();
+
+    function visit(nodeId: string, level: number) {
+      if (temp.has(nodeId)) {
+        // Circular dependency detected, break it
+        return level;
+      }
+      if (visited.has(nodeId)) {
+        return levelMap.get(nodeId) || level;
+      }
+      
+      temp.add(nodeId);
+      const node = nodeMap.get(nodeId)!;
+      let maxLevel = level;
+      
+      // Visit all dependencies
+      node.dependencies?.forEach((depId: string) => {
+        const depLevel = visit(depId, level + 1);
+        maxLevel = Math.max(maxLevel, depLevel);
+      });
+      
+      temp.delete(nodeId);
+      visited.add(nodeId);
+      levelMap.set(nodeId, maxLevel);
+      return maxLevel;
+    }
+
+    // Start topological sort from nodes with no dependencies
+    nodes.forEach(node => {
+      if (!visited.has(node.id)) {
+        visit(node.id, 0);
+      }
+    });
+
+    // Assign final levels
+    nodes.forEach(node => {
+      node.level = levelMap.get(node.id) || 0;
+    });
+
+    // Store all event pairs for later filtering
+    setAllEventPairs(edgeMap);
+
+    const processedStats = {
+      nodes: Array.from(nodeMap.values()),
+      edges: Array.from(edgeMap.entries()).map(([id, count]) => {
+        const [source, target] = id.split('->');
+        return { 
+          source,
+          target,
+          count 
+        };
+      }),
+      userFlows: flows.map(flow => ({
+        events: flow.flow.map(event => event.event_name)
+      }))
+    };
+    
+    console.log('Processed FlowStats:', processedStats);
+    console.log('Node Map:', Array.from(nodeMap.entries()));
+    console.log('Edge Map:', Array.from(edgeMap.entries()));
+    console.log('Unique events:', Array.from(uniqueEvents));
 
     setAllEvents(Array.from(uniqueEvents).sort());
 
@@ -190,12 +288,10 @@ const FlowMap: React.FC = () => {
         initialVisibleEvents.add(node.id);
       }
     });
+    console.log('Initial visible events:', Array.from(initialVisibleEvents));
     setVisibleEvents(initialVisibleEvents);
 
-    return {
-      nodes: Array.from(nodeMap.values()),
-      edges: Array.from(edgeMap.values())
-    };
+    return processedStats;
   };
 
   const handleCreateMap = async () => {
@@ -207,12 +303,14 @@ const FlowMap: React.FC = () => {
     try {
       setIsLoadingFlows(true);
       setError(null);
-      const flows = await getUserFlows(selectedVersion);
+      console.log('Fetching flows for version:', selectedVersion);
+      const flows = await getUserFlows(selectedVersion, parseInt(selectedTime));
+      console.log('Received flows:', flows);
       const stats = processFlows(flows);
       setFlowStats(stats);
     } catch (err) {
-      setError('Failed to load user flows');
       console.error('Error loading user flows:', err);
+      setError('Failed to load user flows');
     } finally {
       setIsLoadingFlows(false);
     }
@@ -248,89 +346,145 @@ const FlowMap: React.FC = () => {
     if (!selectedVersion) {
       throw new Error('Please select a version first');
     }
-
     try {
       setIsAnalyzing(true);
-      const flows = await getUserFlows(selectedVersion);
-      
-      // Filter flows to only include visible events
-      const filteredFlows = flows.map(flow => ({
-        user_id: flow.user_id,
-        flow: flow.flow.filter(event => visibleEvents.has(event.event_name))
-      })).filter(flow => flow.flow.length > 0);
+      const flows = await getUserFlows(selectedVersion, parseInt(selectedTime));
+      if (analyzeData?.type === AnalysisType.FUNNEL && analyzeData.funnelData) {
+        // Filter flows to only include users who followed this exact funnel sequence
+        const funnelSequence = analyzeData.funnelData.sequence.map(e => e.id);
+        const filteredFlows = flows.map(flow => ({
+          user_id: flow.user_id,
+          flow: flow.flow.filter(event => funnelSequence.includes(event.event_name))
+        })).filter(flow => {
+          // Check if the user's flow matches the funnel sequence
+          const userEventIds = flow.flow.map(e => e.event_name);
+          return funnelSequence.every((eventId, index) => userEventIds[index] === eventId);
+        });
 
-      console.log('Sending flows for analysis:', filteredFlows);
-      const analysis = await analyzeFlows(filteredFlows, prompt);
-      console.log('Received analysis result:', analysis);
-      return analysis || 'No insights available';
+        console.log('Sending flows for analysis:', filteredFlows);
+        const analysis = await analyzeFlows(filteredFlows, prompt);
+        console.log('Received analysis result:', analysis);
+        return analysis || 'No insights available';
+      } else {
+        // For regular analyze button, filter flows to only include visible events
+        const filteredFlows = flows.map(flow => ({
+          user_id: flow.user_id,
+          flow: flow.flow.filter(event => visibleEvents.has(event.event_name))
+        })).filter(flow => flow.flow.length > 0);
+
+        const analysis = await analyzeFlows(filteredFlows, prompt);
+        console.log('Analysis:', analysis);
+        return analysis || 'No insights available';
+      }
     } catch (err) {
       console.error('Error analyzing flows:', err);
       throw new Error('Failed to analyze flows. Please try again.');
     } finally {
       setIsAnalyzing(false);
     }
+    return '';
   };
 
   const generatePromptFromSelectedFlow = (): string => {
-    if (selectedMobileFlow === 'all') {
+    if (selectedMobileFlows.has('all')) {
       return "Get insights about all mobile flows";
     }
-    return `Get insights about the ${selectedMobileFlow} flow`;
+    return `Get insights about the ${Array.from(selectedMobileFlows).join(', ')} flow(s)`;
   };
 
   const handleGetInsights = () => {
     setIsAnalyzeSidebarOpen(true);
   };
 
+  const handleMobileFlowChange = (flow: string) => {
+    setSelectedMobileFlows(prev => {
+      const newSet = new Set(prev);
+      if (flow === 'none') {
+        newSet.clear();
+      } else if (flow === 'all') {
+        newSet.clear();
+        newSet.add('all');
+      } else {
+        newSet.delete('all');
+        if (newSet.has(flow)) {
+          newSet.delete(flow);
+        } else {
+          newSet.add(flow);
+        }
+      }
+      return newSet;
+    });
+  };
+
   return (
     <div className={`map-container ${isAnalyzeSidebarOpen ? 'has-sidebar' : ''}`}>
-      <VersionPicker
-        selectedVersion={selectedVersion}
-        versions={versions}
-        visualizationType={visualizationType}
-        isLoading={isLoading}
-        isLoadingFlows={isLoadingFlows}
-        error={error}
-        onVersionChange={setSelectedVersion}
-        onVisualizationTypeChange={setVisualizationType}
-        onCreateMap={handleCreateMap}
-        onAnalyze={handleGetInsights}
-        hasFlowStats={!!flowStats}
-        analyzeButtonText="Get insights"
-      />
+      <div className="controls-row" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <VersionPicker
+          selectedVersion={selectedVersion}
+          versions={versions}
+          isLoading={isLoading}
+          isLoadingFlows={isLoadingFlows}
+          error={error}
+          onVersionChange={setSelectedVersion}
+          onCreateMap={handleCreateMap}
+          onAnalyze={handleGetInsights}
+          hasFlowStats={!!flowStats}
+          analyzeButtonText="Get insights"
+          selectedTime={selectedTime}
+          onTimeChange={setSelectedTime}
+        />
+        <ChartPicker
+          visualizationType={visualizationType}
+          onVisualizationTypeChange={setVisualizationType}
+        />
+      </div>
 
       {flowStats && (
-        <div className="filters-horizontal">
-          <Filters
-            flowStats={flowStats}
-            visibleEvents={visibleEvents}
-            showMobileEvents={showMobileEvents}
-            showBackendEvents={showBackendEvents}
-            showOtherEvents={showOtherEvents}
-            selectedMobileFlow={selectedMobileFlow}
-            mobileFlows={mobileFlows}
-            allEvents={allEvents}
-            onEventVisibilityChange={handleEventVisibilityChange}
-            onTypeFilterChange={handleTypeFilterChange}
-            onMobileFlowChange={setSelectedMobileFlow}
-          />
-        </div>
-      )}
-
-      <svg ref={svgRef} className="flow-graph" />
-      {flowStats && visualizationType === 'flow' && (
-        <FlowChart
-          svgRef={svgRef}
-          stats={flowStats}
-          visibleEvents={visibleEvents}
-        />
-      )}
-      {flowStats && visualizationType === 'sankey' && (
-        <SankeyDiagram
-          svgRef={svgRef}
-          stats={flowStats}
-          visibleEvents={visibleEvents}
-        />
+        <>
+          <div className="filters-horizontal">
+            <Filters
+              flowStats={flowStats}
+              visibleEvents={visibleEvents}
+              showMobileEvents={showMobileEvents}
+              showBackendEvents={showBackendEvents}
+              showOtherEvents={showOtherEvents}
+              selectedMobileFlows={selectedMobileFlows}
+              mobileFlows={mobileFlows}
+              allEvents={allEvents}
+              onEventVisibilityChange={handleEventVisibilityChange}
+              onTypeFilterChange={handleTypeFilterChange}
+              onMobileFlowChange={handleMobileFlowChange}
+            />
+          </div>
+          {visualizationType === 'flow' && (
+            <FlowChart
+              svgRef={svgRef}
+              stats={flowStats}
+              visibleEvents={visibleEvents}
+            />
+          )}
+          {visualizationType === 'sankey' && (
+            <SankeyDiagram
+              svgRef={svgRef}
+              stats={flowStats}
+              visibleEvents={visibleEvents}
+            />
+          )}
+          {visualizationType === 'funnel' && (
+            <FunnelChart
+              svgRef={svgRef}
+              stats={flowStats}
+              visibleEvents={visibleEvents}
+              onAnalyze={(funnelData) => {
+                setAnalyzeData({
+                  type: AnalysisType.FUNNEL,
+                  funnelData
+                });
+                setIsAnalyzeSidebarOpen(true);
+              }}
+            />
+          )}
+        </>
       )}
 
       {isAnalyzeSidebarOpen && (

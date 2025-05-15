@@ -1,34 +1,33 @@
 import React from 'react';
-import type { VisualizationType } from './types';
 
 interface VersionPickerProps {
   selectedVersion: string;
   versions: string[];
-  visualizationType: VisualizationType;
   isLoading: boolean;
   isLoadingFlows: boolean;
   error: string | null;
   onVersionChange: (version: string) => void;
-  onVisualizationTypeChange: (type: VisualizationType) => void;
   onCreateMap: () => void;
   onAnalyze: () => void;
   hasFlowStats: boolean;
   analyzeButtonText?: string;
+  selectedTime: string;
+  onTimeChange: (time: string) => void;
 }
 
 export const VersionPicker: React.FC<VersionPickerProps> = ({
   selectedVersion,
   versions,
-  visualizationType,
   isLoading,
   isLoadingFlows,
   error,
   onVersionChange,
-  onVisualizationTypeChange,
   onCreateMap,
   onAnalyze,
   hasFlowStats,
-  analyzeButtonText = 'Analyze'
+  analyzeButtonText = 'Analyze',
+  selectedTime,
+  onTimeChange
 }) => {
   return (
     <div className="version-picker">
@@ -47,17 +46,26 @@ export const VersionPicker: React.FC<VersionPickerProps> = ({
           ))}
         </select>
         <select
-          value={visualizationType}
-          onChange={(e) => onVisualizationTypeChange(e.target.value as VisualizationType)}
-          className="visualization-select"
+          value={selectedTime}
+          onChange={(e) => onTimeChange(e.target.value)}
+          className="time-select"
+          disabled={isLoading}
         >
-          <option value="flow">Flow Chart</option>
-          <option value="sankey">Sankey Diagram</option>
+          <option value="5">5 mins</option>
+          <option value="10">10 mins</option>
+          <option value="15">15 mins</option>
+          <option value="30">30 mins</option>
+          <option value="60">1 hour</option>
+          <option value="120">2 hours</option>
+          <option value="1440">1 day</option>
+          <option value="2880">2 days</option>
         </select>
+      </div>
+      <div className="action-buttons">
         <button 
           onClick={onCreateMap}
           className="create-map-button"
-          disabled={isLoading || !selectedVersion || isLoadingFlows}
+          disabled={isLoading || !selectedVersion || !selectedTime || isLoadingFlows}
         >
           {isLoadingFlows ? 'Loading...' : 'Create Map'}
         </button>

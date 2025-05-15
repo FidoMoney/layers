@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import type { NodeData } from './types';
+import type { NodeData, EdgeData, DiagramLink } from './types';
 
 export const getEventType = (eventName: string): 'ME' | 'BE' | 'OTHER' => {
   if (eventName.startsWith('ME - ') || eventName.startsWith('ME ')) return 'ME';
@@ -16,9 +16,9 @@ export const getMobileFlowName = (eventName: string): string => {
 
 export const getNodeColor = (node: NodeData): string => {
   switch (node.type) {
-    case 'ME': return '#28a745';
+    case 'ME': return '#e0528c';
     case 'BE': return '#007bff';
-    default: return '#6c757d';
+    default: return '#b0b0b0';
   }
 };
 
@@ -47,3 +47,55 @@ export const wrap = (text: d3.Selection<SVGTextElement, any, SVGGElement, unknow
     }
   });
 }; 
+
+export function processLinks(edges: EdgeData[], visibleEvents: Set<string>): DiagramLink[] {
+  // Create a map of all event pairs and their counts
+  const eventPairs = new Map<string, number>();
+  edges.forEach(edge => {
+    const sourceId = typeof edge.source === 'string' ? edge.source : edge.source.id;
+    const targetId = typeof edge.target === 'string' ? edge.target : edge.target.id;
+    if (visibleEvents.has(sourceId) && visibleEvents.has(targetId)) {
+      const pairKey = `${sourceId}-${targetId}`;
+      eventPairs.set(pairKey, (eventPairs.get(pairKey) || 0) + edge.count);
+    }
+  });
+
+  // Convert to array of links
+  return Array.from(eventPairs.entries()).map(([pair, count]) => {
+    const [sourceId, targetId] = pair.split('-');
+    return {
+      source: { id: sourceId } as NodeData,
+      target: { id: targetId } as NodeData,
+      count,
+      value: count, // For Sankey diagram
+      width: Math.sqrt(count) * 2, // For flow chart
+      opacity: 0.6
+    };
+  });
+}
+
+export function getVisibleLinks(edges: EdgeData[], visibleEvents: Set<string>): DiagramLink[] {
+  
+  const filteredEdges = edges.filter(edge => {
+    const sourceId = typeof edge.source === 'string' ? edge.source : edge.source.id;
+    const targetId = typeof edge.target === 'string' ? edge.target : edge.target.id;
+    const isVisible = visibleEvents.has(sourceId) && visibleEvents.has(targetId);
+    return isVisible;
+  });
+
+  const links = filteredEdges.map(edge => {
+    const sourceId = typeof edge.source === 'string' ? edge.source : edge.source.id;
+    const targetId = typeof edge.target === 'string' ? edge.target : edge.target.id;
+    return {
+      source: sourceId,
+      target: targetId,
+      count: edge.count,
+      value: edge.count,
+      width: Math.sqrt(edge.count) * 2,
+      opacity: 0.6
+    };
+  });
+
+  console.log('Output links:', links);
+  return links;
+} 
