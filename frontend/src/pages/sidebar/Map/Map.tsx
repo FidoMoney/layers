@@ -416,27 +416,118 @@ const FlowMap: React.FC = () => {
     });
   };
 
+  const handleViewAlerts = () => {
+    if (!selectedVersion) return;
+    console.log('Viewing alerts for version:', selectedVersion);
+    // TODO: Implement alerts view logic
+  };
+
   return (
-    <div className={`map-container ${isAnalyzeSidebarOpen ? 'has-sidebar' : ''}`}>
-      <div className="controls-row" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-        <VersionPicker
-          selectedVersion={selectedVersion}
-          versions={versions}
-          isLoading={isLoading}
-          isLoadingFlows={isLoadingFlows}
-          error={error}
-          onVersionChange={setSelectedVersion}
-          onCreateMap={handleCreateMap}
-          onAnalyze={handleGetInsights}
-          hasFlowStats={!!flowStats}
-          analyzeButtonText="Get insights"
-          selectedTime={selectedTime}
-          onTimeChange={setSelectedTime}
-        />
-        <ChartPicker
-          visualizationType={visualizationType}
-          onVisualizationTypeChange={setVisualizationType}
-        />
+    <div className="map-container">
+      {(isLoadingFlows || isRendering) && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 9999,
+          }}
+        >
+          <div
+            style={{
+              width: '50px',
+              height: '50px',
+              border: '5px solid #f3f3f3',
+              borderTop: '5px solid #3498db',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+              marginBottom: '10px',
+            }}
+          />
+          <div style={{ color: '#666', fontSize: '14px' }}>
+            {isLoadingFlows ? 'Loading flows...' : 'Updating visualization...'}
+          </div>
+        </div>
+      )}
+      <style>
+        {`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}
+      </style>
+
+      <div className="controls-container">
+        <div className="version-controls">
+          <select 
+            value={selectedVersion}
+            onChange={(e) => setSelectedVersion(e.target.value)}
+            className="version-select"
+            disabled={isLoading}
+          >
+            <option value="">Select App Version</option>
+            {versions.map((version) => (
+              <option key={version} value={version}>
+                {version}
+              </option>
+            ))}
+          </select>
+          <select
+            value={selectedTime}
+            onChange={(e) => setSelectedTime(e.target.value)}
+            className="time-select"
+            disabled={isLoading}
+          >
+            <option value="5">5 mins</option>
+            <option value="10">10 mins</option>
+            <option value="15">15 mins</option>
+            <option value="30">30 mins</option>
+            <option value="60">1 hour</option>
+            <option value="120">2 hours</option>
+            <option value="1440">1 day</option>
+            <option value="2880">2 days</option>
+          </select>
+        </div>
+        <div className="chart-picker-container">
+          <ChartPicker
+            visualizationType={visualizationType}
+            onVisualizationTypeChange={setVisualizationType}
+          />
+        </div>
+        <div className="action-buttons">
+          <button 
+            onClick={handleCreateMap}
+            className="create-map-button"
+            disabled={isLoading || !selectedVersion || !selectedTime || isLoadingFlows}
+          >
+            {isLoadingFlows ? 'Loading...' : 'Create Map'}
+          </button>
+          {flowStats && (
+            <>
+              <button 
+                onClick={() => setIsAnalyzeSidebarOpen(true)}
+                className="analyze-button"
+              >
+                Analyze
+              </button>
+              <button 
+                onClick={handleViewAlerts}
+                className="analyze-button"
+              >
+                <span className="alert-dot"></span>
+                View alerts
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {flowStats && (
