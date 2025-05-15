@@ -413,6 +413,12 @@ const FlowMap: React.FC = () => {
     });
   };
 
+  const handleViewAlerts = () => {
+    if (!selectedVersion) return;
+    console.log('Viewing alerts for version:', selectedVersion);
+    // TODO: Implement alerts view logic
+  };
+
   return (
     <div className="map-container">
       {(isLoadingFlows || isRendering) && (
@@ -502,12 +508,21 @@ const FlowMap: React.FC = () => {
             {isLoadingFlows ? 'Loading...' : 'Create Map'}
           </button>
           {flowStats && (
-            <button 
-              onClick={() => setIsAnalyzeModalOpen(true)}
-              className="analyze-button"
-            >
-              Analyze
-            </button>
+            <>
+              <button 
+                onClick={() => setIsAnalyzeModalOpen(true)}
+                className="analyze-button"
+              >
+                Analyze
+              </button>
+              <button 
+                onClick={handleViewAlerts}
+                className="analyze-button"
+              >
+                <span className="alert-dot"></span>
+                View alerts
+              </button>
+            </>
           )}
         </div>
       </div>
