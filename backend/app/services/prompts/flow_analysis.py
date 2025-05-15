@@ -59,64 +59,76 @@ Here's the event data:
 
 Please analyze this data and provide a detailed performance analysis following these steps:
 
-1. Flow Start and End Points:
-   - Identify the first event (most common first event by timestamp)
-   - Identify the last event (most common last event by timestamp)
-   - Calculate how many users started with the first event
-   - Calculate how many users ended with the last event
+1. Overall Metrics:
+   - Total number of users who started the flow
+   - Total number of users who completed the flow
+   - Overall conversion rate (completed/started * 100)
+   - Average time to complete the flow
+   - Median time to complete the flow
+   - Average funnel completion time (time from first to last event) for users who completed the entire flow
+   - Median funnel completion time for users who completed the entire flow
 
-2. Performance Metrics:
-   - Calculate the overall conversion rate:
-     * (Number of users who completed the last event / Number of users who started with the first event) * 100
-   - Calculate the total flow time:
-     * For each user: time difference between first and last event
-     * Average total flow time across all users
-     * Median total flow time across all users
-
-3. Step-by-Step Analysis:
-   - For each event in chronological order:
+2. Funnel Analysis:
+   - For each step in the flow:
      * Number of users who reached this step
-     * Conversion rate from previous step
+     * Percentage of users who reached this step (compared to total users)
+     * Drop-off rate from previous step
      * Average time spent on this step
      * Median time spent on this step
 
+3. Critical Drop-off Points:
+   - Identify the step with the highest drop-off rate
+   - Calculate the percentage of users lost at this step
+   - Analyze potential reasons for the drop-off
+
 Please format your response exactly as follows:
 
-🎯 Overall Performance:
-- First Event: [Event Name] (reached by [X] users)
-- Last Event: [Event Name] (reached by [X] users)
+📊 Overall Performance:
+- Total Users: [X]
+- Completed Flow: [X] users
 - Overall Conversion Rate: [X]%
-- Average Total Flow Time: [X] minutes
-- Median Total Flow Time: [X] minutes
+- Average Completion Time: [X] minutes
+- Median Completion Time: [X] minutes
+- Average Funnel Time (First to Last): [X] minutes
+- Median Funnel Time (First to Last): [X] minutes
 
-📊 Step-by-Step Performance:
+📈 Funnel Analysis:
 
 Step 1: [First Event Name]
-Users: [X] (100%)
+Users: [X] ([Y]% of total)
 Avg Time: [X] minutes
 Median Time: [X] minutes
-↓ [Conversion Rate]%
+↓ [Drop-off Rate]%
 
 Step 2: [Second Event Name]
-Users: [X] ([Y]% of previous step)
+Users: [X] ([Y]% of total)
 Avg Time: [X] minutes
 Median Time: [X] minutes
-↓ [Conversion Rate]%
+↓ [Drop-off Rate]%
 
 [Continue for all steps...]
 
 Final Step: [Last Event Name]
-Users: [X] ([Y]% of previous step)
+Users: [X] ([Y]% of total)
 Avg Time: [X] minutes
 Median Time: [X] minutes
 
-⚠️ Critical Points:
-- Highest Drop-off: [Step Name] ([X]% drop-off)
-- Longest Average Time: [Step Name] ([X] minutes)
-- Most Common Abandonment Point: [Step Name]
+⚠️ Critical Drop-off Points:
+1. Highest Drop-off: [Step Name]
+   - [X]% of users dropped at this step
+   - Potential reasons: [List 2-3 potential reasons]
+   - Suggested improvements: [List 2-3 specific improvements]
+
+2. Second Highest Drop-off: [Step Name]
+   - [X]% of users dropped at this step
+   - Potential reasons: [List 2-3 potential reasons]
+   - Suggested improvements: [List 2-3 specific improvements]
 
 💡 Key Insights:
-[3-5 key insights about performance and potential improvements]"""
+1. [Main insight about overall performance]
+2. [Main insight about user behavior]
+3. [Main insight about timing/engagement]
+4. [Main insight about potential improvements]"""
 
         return prompt
 
