@@ -10,18 +10,19 @@ class UserBehaviorPrompt:
         Generate a prompt for analyzing individual user behavior.
         
         Args:
-            user_data: Dictionary containing user_id and events data
+            user_data: Dictionary containing user_id, user_name, and events data
             
         Returns:
             str: Formatted prompt for user behavior analysis
         """
         user_id = user_data.get('user_id', '')
+        user_name = user_data.get('user_name', 'Unknown User')
         events = user_data.get('events', [])
         
         # Generate the prompt
         prompt = f"""You are an expert in analyzing user behavior in mobile apps.
 
-I will provide you with the complete event history for user {user_id}, and I need you to perform a detailed behavioral analysis.
+I will provide you with the complete event history for {user_name}, and I need you to perform a detailed behavioral analysis.
 
 Here's the user's event data:
 
@@ -29,72 +30,50 @@ Here's the user's event data:
 
 Please analyze this data and provide a comprehensive behavioral analysis following these steps:
 
-1. Session Identification:
-   - Identify all user sessions (30-minute inactivity threshold)
-   - For each session, provide:
-     * Start and end timestamps
-     * Total duration
-     * All flows interacted with
-     * Success/failure status of each flow
+1. User Story:
+   - When did the user first onboard the app
+   - What was their initial journey like
+   - Have they taken any loans with us
+   - How engaged are they with the app
+   - What are their main activities/interests in the app
 
-2. Flow Analysis per Session:
-   For each session, analyze:
-   - Which flows were started
-   - Which flows were completed
-   - Which flows were abandoned
-   - Time spent in each flow
-   - Any retry attempts within the session
+2. Session Analysis:
+   - Total number of sessions
+   - Average session duration
+   - Most active time periods
+   - Session frequency patterns
 
-3. Cross-Session Behavior:
-   - Time between sessions
-   - Flow retry patterns across sessions
-   - Failed flow completion attempts
-   - Most common session patterns
-
-4. User Behavior Summary:
-   - Session frequency and duration patterns
-   - Most engaged with flows
-   - Most problematic flows
-   - Overall success/failure patterns
-   - Time-of-day patterns
-   - Flow completion rates
+3. Key Activities:
+   - Most frequent actions
+   - Loan-related activities (if any)
+   - Feature engagement levels
+   - Success/failure patterns
 
 Please format your response exactly as follows:
 
-👤 User {user_id} Behavior Analysis
+👤 {user_name}'s Journey
 
-📅 Session Analysis:
-[For each session]
-- Session [N]:
-  * Start: [timestamp]
-  * End: [timestamp]
-  * Duration: [X] minutes
-  * Flows: [list of flows]
-  * Status: [completed/abandoned flows]
+📖 User Story:
+[Write a concise story about the user's journey, including:
+- When they joined
+- Their initial experience
+- Loan history (if any)
+- Overall engagement level
+- Main interests/activities]
 
-🔄 Flow Analysis:
-[For each unique flow]
-- Flow: [name]
-  * Started: [N] times
-  * Completed: [N] times
-  * Failed: [N] times
-  * Average time: [X] minutes
-  * Retry rate: [X]%
+📊 Key Metrics:
+- Total Sessions: [N]
+- Average Session Duration: [X] minutes
+- Most Active Time: [time range]
+- Engagement Level: [High/Medium/Low]
 
-⏱️ Time Patterns:
-- Average session duration: [X] minutes
-- Average time between sessions: [X] hours
-- Most active time: [time range]
-- Most successful time: [time range]
-
-📊 Overall Behavior:
-- Total sessions: [N]
-- Most used flow: [name] ([N] times)
-- Most problematic flow: [name] ([X]% failure rate)
-- Overall completion rate: [X]%
+🎯 Main Activities:
+- Most Used Features: [list top 3]
+- Loan Status: [Active/None/Previous]
+- Success Rate: [X]%
 
 💡 Key Insights:
-[3-5 key behavioral patterns or insights]"""
+[2-3 key insights about the user's behavior and potential opportunities]"""
 
         return prompt
 
